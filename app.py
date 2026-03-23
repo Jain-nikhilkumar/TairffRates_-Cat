@@ -116,7 +116,14 @@ db = get_engine()
 
 # --- SIDEBAR NAV ---
 with st.sidebar:
-    st.caption("This is Test Mode USE IN DARK Theme")
+    st.markdown(
+    """
+    <p style='color: #FFB800 !important; font-weight: 600; font-size: 14px; margin-bottom: 0px;'>
+        ⚠️ This is Test Mode - Please Use Dark Theme
+    </p>
+    """, 
+    unsafe_allow_html=True
+)
     st.markdown("---")
 
     st.markdown("<div class='status-pulse'></div><b>SYSTEM ONLINE</b>", unsafe_allow_html=True)
