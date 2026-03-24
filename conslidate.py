@@ -1,49 +1,75 @@
+
 import pandas as pd
 import glob
 import os
 
-# 1. Identify all your excel files
-folder_path = r"C:\\Users\\Nikhil.Jain\\Downloads\\Tariff Database - All Countries - August Update (3)\\Tariff Database - All Countries - August Update"
-excel_files = glob.glob(os.path.join(folder_path, "*.xlsx")) # Adjust this if your files are in a specific folder
+# 1. CONFIGURATION
+folder_path = r"C:\\Users\\Nikhil.Jain\\Downloads\\Tariff Database - All Countries - August Update2 (1)\\Tariff Database - All Countries - August Update"
+excel_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
 
-all_dfs = []
+# Define columns that MUST be numeric (decimals/amounts)
+numeric_cols = [
+    'Old Tariff (Dec 2024)',
+    'Sec 232 Tariffs',
+    'Sec 232 Copper',
+    'Mexican Tomatoes (in effect from 14-Jul-2025)',
+    'Canadian Energy',
+    'Canadian & Mexican Potash',
+    'IEEPA Tariffs on China',
+    'IEEPA Tariffs on Mexico & Canada',
+    'Reciprocal Tariff',
+    '90 Day Pause on All others',
+    'Revised Reciprocal Tariffs',
+    'Electronics Exemptions',
+    'Annex II Exemptions',
+    'If Reciprocal Tariff were applied',
+    'Tariff as of 10-April-2025',
+    'Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)',
+    'US Import $',
+    '2024 Imports for Consumption',
+    'Total Tariff Paid On Dec 2024',
+    'Total Tariff Paid On Recoprocal Tariff',
+    'Total Tariff Paid On 10-April-2025'
+]
+
+all_data = []
 all_columns = set()
 
-print("Step 1: Analyzing headers across all files...")
+print("Step 1: Identifying all unique columns...")
 for file in excel_files:
-    # Read only the first row to get column names (saves memory)
-    columns = pd.read_excel(file,header=2,sheet_name="Master Sheet",nrows=0).columns
-    all_columns.update(columns)
-    print(f"Found {len(columns)} columns in {file}")
+    cols = pd.read_excel(file, sheet_name="Master Sheet", header=2, nrows=0).columns
+    all_columns.update(cols)
 
-print(f"Total unique columns identified: {len(all_columns)}")
-
-# 2. Process and Merge
-print("\nStep 2: Merging data (this may take a few minutes)...")
-final_data_list = []
-
+# 2. MERGE LOGIC
+print(f"Step 2: Processing {len(excel_files)} files...")
 for file in excel_files:
-    print(f"Processing {file}...")
-    df = pd.read_excel(file,sheet_name="Master Sheet",header=2)
+    print(f"-> Reading: {os.path.basename(file)}")
+    df = pd.read_excel(file, sheet_name="Master Sheet", header=2)
     
-    # Reindex: This magic line adds missing columns as 'NaN' 
-    # so every file matches the 'Master' structure
+    # Align to master column list
     df = df.reindex(columns=list(all_columns))
+
+    # Apply Type Safety per column
+    for col in df.columns:
+        if col in numeric_cols:
+            # Convert to number, invalid becomes NaN, then fill with 0.0
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+        else:
+            # Convert to string, fill empty with N/A
+            df[col] = df[col].astype(str).replace(['nan', 'None', 'NAT'], 'N/A').fillna('N/A')
     
-    # Fill the missing columns for this specific file with 'N/A'
-    df.fillna("N/A", inplace=True)
-    
-    final_data_list.append(df)
+    all_data.append(df)
 
-# 3. Concatenate everything into one massive dataframe
+# 3. CONSOLIDATE & SAVE
+print("Step 3: Finalizing Parquet Database...")
+master_df = pd.concat(all_data, ignore_index=True)
 
-master_df = pd.concat(final_data_list, ignore_index=True)
+# Ensure HS Code is always treated as a string to keep leading zeros
+if 'HS Code' in master_df.columns:
+    master_df['HS Code'] = master_df['HS Code'].astype(str)
 
-# 4. Save to Parquet (The format required for the high-speed app)
-output_filename = "master_data.parquet"
-master_df= master_df.astype(str)
-master_df.to_parquet(output_filename, index=False, engine='pyarrow')
+master_df.to_parquet("master_data.parquet", index=False, engine='pyarrow')
 
-print(f"\nSuccess! Created '{output_filename}'")
-print(f"Total Rows: {len(master_df)}")
-print(f"Total Columns: {len(master_df.columns)}")
+print(f"\nSUCCESS! Created 'master_data.parquet'")
+print(f"Total Rows: {len(master_df)} | Total Columns: {len(master_df.columns)}")
+
