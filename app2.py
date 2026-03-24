@@ -155,8 +155,7 @@ with tab1:
     if s_l2 != "All Groups": query += f" AND L2 = '{s_l2}'"
     if s_l3 != "All Classes": query += f" AND L3 = '{s_l3}'"
     if s_l4 != "All Items": query += f" AND L4 = '{s_l4}'"
-    if search: query += f" AND (CAST(\"HS Code\" AS VARCHAR) LIKE '{search}%' OR \"Country\" LIKE '%{search}%')"
-
+    if search: query += f" AND (\"HS Code\" LIKE '{search}%' OR \"Country\" LIKE '%{search}%')"
     data_preview = db.execute(query + " LIMIT 1000").df()
 
     # --- FIX: Convert 0.15 to 15.00 for display ---
@@ -211,7 +210,10 @@ with tab2:
         if uploaded and run_btn:
             with st.status("Engine Processing...") as status:
                 try:
-                    df_in = pd.read_excel(uploaded) if uploaded.name.endswith('xlsx') else pd.read_csv(uploaded)
+                    if uploaded.name.endswith('xlsx'):
+                        df_in = pd.read_excel(uploaded, dtype=str)
+                    else:
+                        df_in = pd.read_csv(uploaded, dtype=str)
                     def find_col(names, actual):
                         for p in names:
                             for a in actual:

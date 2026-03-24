@@ -38,16 +38,20 @@ all_columns = set()
 print("Step 1: Identifying all unique columns...")
 for file in excel_files:
     cols = pd.read_excel(file, sheet_name="Master Sheet", header=2, nrows=0).columns
-    all_columns.update(cols)
+    # This ensures that if the code is less than the intended length, zeros are added back.
+    # (Adjust the '8' to your standard HS code length, or just keep it as .astype(str))
+  
 
 # 2. MERGE LOGIC
 print(f"Step 2: Processing {len(excel_files)} files...")
 for file in excel_files:
     print(f"-> Reading: {os.path.basename(file)}")
-    df = pd.read_excel(file, sheet_name="Master Sheet", header=2)
+    df = pd.read_excel(file, sheet_name="Master Sheet", header=2,dtype={'HS Code': str})
     
+    all_columns.update(cols)
     # Align to master column list
     df = df.reindex(columns=list(all_columns))
+    df['HS Code'] = df['HS Code'].astype(str).str.strip().str.replace('.0', '', regex=False)
 
     # Apply Type Safety per column
     for col in df.columns:
