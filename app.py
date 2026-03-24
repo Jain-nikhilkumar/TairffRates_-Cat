@@ -96,16 +96,32 @@ db = get_engine()
 
 # --- 4. FORMATTING CONFIG ---
 # Formats decimals (0.15 -> 15.00%) and Currency
+# --- EXPANDED COLUMN FORMATTING CONFIG ---
 numeric_format_config = {
-    # Percentage Columns - FIXED SYNTAX
+    # 1. Percentage Columns (Formatted with 2 decimals and %)
     "Old Tariff (Dec 2024)": st.column_config.NumberColumn(format="%.2f%%"),
-    "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)": st.column_config.NumberColumn(format="%.2f%%"),
-    "Revised Reciprocal Tariffs": st.column_config.NumberColumn(format="%.2f%%"),
+    "Sec 232 Tariffs": st.column_config.NumberColumn(format="%.2f%%"),
+    "Sec 232 Copper": st.column_config.NumberColumn(format="%.2f%%"),
+    "Mexican Tomatoes (in effect from 14-Jul-2025)": st.column_config.NumberColumn(format="%.2f%%"),
+    "Canadian Energy": st.column_config.NumberColumn(format="%.2f%%"),
+    "Canadian & Mexican Potash": st.column_config.NumberColumn(format="%.2f%%"),
+    "IEEPA Tariffs on China": st.column_config.NumberColumn(format="%.2f%%"),
+    "IEEPA Tariffs on Mexico & Canada": st.column_config.NumberColumn(format="%.2f%%"),
     "Reciprocal Tariff": st.column_config.NumberColumn(format="%.2f%%"),
-    
-    # Currency remains the same
+    "90 Day Pause on All others": st.column_config.NumberColumn(format="%.2f%%"),
+    "Revised Reciprocal Tariffs": st.column_config.NumberColumn(format="%.2f%%"),
+    "Electronics Exemptions": st.column_config.NumberColumn(format="%.2f%%"),
+    "Annex II Exemptions": st.column_config.NumberColumn(format="%.2f%%"),
+    "If Reciprocal Tariff were applied": st.column_config.NumberColumn(format="%.2f%%"),
+    "Tariff as of 10-April-2025": st.column_config.NumberColumn(format="%.2f%%"),
+    "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)": st.column_config.NumberColumn(format="%.2f%%"),
+
+    # 2. Currency/Total Columns (Formatted with $ sign and commas)
     "2024 Imports for Consumption": st.column_config.NumberColumn(format="$%.2f"),
     "US Import $": st.column_config.NumberColumn(format="$%.2f"),
+    "Total Tariff Paid On Dec 2024": st.column_config.NumberColumn(format="$%.2f"),
+    "Total Tariff Paid On Recoprocal Tariff": st.column_config.NumberColumn(format="$%.2f"),
+    "Total Tariff Paid On 10-April-2025": st.column_config.NumberColumn(format="$%.2f"),
 }
 # --- 5. SIDEBAR NAV ---
 with st.sidebar:
@@ -160,7 +176,17 @@ with tab1:
     data_preview = db.execute(query + " LIMIT 1000").df()
 
     # --- FIX: Convert 0.15 to 15.00 for display ---
-    pct_cols = ["Old Tariff (Dec 2024)", "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)", "Reciprocal Tariff"]
+    # Updated list to include all your new percentage columns
+    pct_cols = [
+        "Old Tariff (Dec 2024)", "Sec 232 Tariffs", "Sec 232 Copper", 
+        "Mexican Tomatoes (in effect from 14-Jul-2025)", "Canadian Energy", 
+        "Canadian & Mexican Potash", "IEEPA Tariffs on China", 
+        "IEEPA Tariffs on Mexico & Canada", "Reciprocal Tariff", 
+        "90 Day Pause on All others", "Revised Reciprocal Tariffs", 
+        "Electronics Exemptions", "Annex II Exemptions", 
+        "If Reciprocal Tariff were applied", "Tariff as of 10-April-2025", 
+        "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)"
+    ]
     for col in pct_cols:
         if col in data_preview.columns:
             data_preview[col] = data_preview[col] * 100
@@ -168,8 +194,6 @@ with tab1:
     # --- TAB 1: ANALYTICS (SAFE MODE) ---
     if not data_preview.empty:
         m1, m2, m3 = st.columns(3)
-        
-        
 
         # Safe Charts
         if "Country" in data_preview.columns and "2024 Imports for Consumption" in data_preview.columns:
@@ -264,7 +288,17 @@ with tab2:
                         final_res = final_res.drop(columns=['HS_LEN'])
 
                     # --- FIX: Convert 0.15 to 15.00 for display ---
-                    pct_cols = ["Old Tariff (Dec 2024)", "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)", "Reciprocal Tariff"]
+                    # Updated list to include all your new percentage columns
+                    pct_cols = [
+                        "Old Tariff (Dec 2024)", "Sec 232 Tariffs", "Sec 232 Copper", 
+                        "Mexican Tomatoes (in effect from 14-Jul-2025)", "Canadian Energy", 
+                        "Canadian & Mexican Potash", "IEEPA Tariffs on China", 
+                        "IEEPA Tariffs on Mexico & Canada", "Reciprocal Tariff", 
+                        "90 Day Pause on All others", "Revised Reciprocal Tariffs", 
+                        "Electronics Exemptions", "Annex II Exemptions", 
+                        "If Reciprocal Tariff were applied", "Tariff as of 10-April-2025", 
+                        "Revised Reciprocal Tariffs (To go in effect on 01-Aug-2025)"
+                    ]
                     for col in pct_cols:
                         if col in final_res.columns:
                             final_res[col] = pd.to_numeric(final_res[col], errors='coerce') * 100
